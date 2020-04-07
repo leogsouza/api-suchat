@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
 	"github.com/go-chi/render"
+	"github.com/leogsouza/api-suchat/internal/logger"
 	"github.com/leogsouza/api-suchat/internal/service"
 )
 
@@ -15,10 +16,16 @@ type handler struct {
 }
 
 func New(s *service.Service) http.Handler {
+
+	h := &handler{s}
+
+	logrus := logger.New()
+
 	r := chi.NewRouter()
+
+	r.Use(logger.NewStructuredLogger(logrus))
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
 	cors := cors.New(cors.Options{
@@ -36,6 +43,7 @@ func New(s *service.Service) http.Handler {
 	r.Get("/", statusHandler)
 
 	r.Get("/auth", authHandler)
+	r.Post("/register", h.register)
 
 	return r
 }

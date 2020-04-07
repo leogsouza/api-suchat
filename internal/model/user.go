@@ -10,7 +10,7 @@ const (
 type User struct {
 	Name      string
 	Email     string
-	password  string
+	Password  string
 	Lastname  string
 	Role      role
 	AvatarURL *string
