@@ -4,15 +4,14 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/leogsouza/api-suchat/internal/model"
-	"gopkg.in/dealancer/validate.v2"
+	"github.com/gookit/validate"
 )
 
 type registerUserInput struct {
-	Name     string `validate:"empty=false & format=alnum_unicode"`
-	Email    string `validate:"empty=false & format=email"`
-	Lastname string `validate:"empty=false & format=alnum_unicode"`
-	Password string `validate:"empty=false & gte=8"`
+	Name     string `json:"name" validate:"required"`
+	Email    string `json:"email" validate:"required|email"`
+	Lastname string `json:"lastname" validate:""`
+	Password string `json:"password" validate:"required|minLen:8"`
 }
 
 func (h *handler) register(w http.ResponseWriter, r *http.Request) {
@@ -24,26 +23,14 @@ func (h *handler) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validate.Validate(&in); err != nil {
-		switch err.(type) {
-		case validate.ErrorSyntax:
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		case validate.ErrorValidation:
-			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
-		default:
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+	v := validate.Struct(in)
+
+	if !v.Validate() {
+		respond(w, v.Errors, http.StatusUnprocessableEntity)
 		return
 	}
 
-	user := &model.User{
-		Name:     in.Name,
-		Email:    in.Email,
-		Lastname: in.Lastname,
-		Password: in.Password,
-	}
-
-	err := h.Register(user)
+	err := h.Register(in.Name, in.Email, in.Lastname, in.Password)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
