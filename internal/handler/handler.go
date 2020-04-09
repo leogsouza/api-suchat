@@ -43,6 +43,7 @@ func New(s *service.Service) http.Handler {
 	r.Get("/", statusHandler)
 
 	r.Get("/auth", authHandler)
+	r.Post("/login", h.login)
 	r.Post("/register", h.register)
 
 	return r

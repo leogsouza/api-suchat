@@ -25,6 +25,6 @@ func respondError(w http.ResponseWriter, err error) {
 }
 
 type ErrorResponse struct {
-	Code    string
-	Message string
+	Code    int    `json:"code,omitempty"`
+	Message string `json:"message"`
 }
