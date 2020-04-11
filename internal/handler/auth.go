@@ -57,6 +57,11 @@ func (h handler) logout(w http.ResponseWriter, r *http.Request) {
 	respond(w, logoutOutput{true}, http.StatusOK)
 }
 
+type authResponse struct {
+	IsAuth bool `json:"isAuth"`
+	Error  bool `json:"error"`
+}
+
 func (h *handler) withAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		a := r.Header.Get("Authorization")
@@ -83,7 +88,7 @@ func (h *handler) authUser(w http.ResponseWriter, r *http.Request) {
 	u, err := h.AuthUser(r.Context())
 
 	if err == service.ErrUnauthenticated {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		respond(w, authResponse{}, http.StatusOK)
 		return
 	}
 
