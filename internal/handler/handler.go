@@ -41,38 +41,18 @@ func New(s *service.Service) http.Handler {
 	r.Use(cors.Handler)
 
 	r.Get("/", statusHandler)
-
-	r.Get("/auth", authHandler)
 	r.Post("/login", h.login)
 	r.Post("/register", h.register)
+
+	r.Group(func(r chi.Router) {
+		r.Use(h.withAuth)
+		r.Get("/auth", h.authUser)
+		r.Get("/logout", h.logout)
+	})
 
 	return r
 }
 
 func statusHandler(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, "ok")
-}
-
-func authHandler(w http.ResponseWriter, r *http.Request) {
-	auth := &authResponse{
-		false,
-		false,
-	}
-	render.JSON(w, r, auth)
-}
-
-type authResponse struct {
-	IsAuth bool `json:"isAuth"`
-	Error  bool `json:"error"`
-}
-
-type User struct {
-	Name     string
-	Email    string
-	Password string
-	Lastname string
-	Role     int
-	Image    string
-	Token    string
-	tokenExp int
 }

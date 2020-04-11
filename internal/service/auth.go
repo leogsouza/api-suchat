@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -21,6 +23,9 @@ const (
 var (
 	// ErrUnauthenticated used when there is no user authenticated in the context.
 	ErrUnauthenticated = errors.New("unauthenticated")
+
+	// ErrInvalidToken used when there is no user authenticated in the context.
+	ErrInvalidToken = errors.New("InvalidToken")
 )
 
 type key string
@@ -61,6 +66,24 @@ func (s *Service) Login(email, password string) (UserLoginOutput, error) {
 	return out, nil
 }
 
+func (s *Service) Logout(ctx context.Context) error {
+	email, ok := ctx.Value(KeyAuthUserID).(string)
+	if !ok {
+		return ErrUnauthenticated
+	}
+	collection := s.db.Collection("users")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	filter := bson.M{"email": email}
+	update := bson.D{{"$set", bson.M{"token": "", "token_exp": time.Time{}}}}
+	_, err := collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func verifyPassword(hashedPassword, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
@@ -74,7 +97,7 @@ func (s *Service) generateToken(email string, u *UserLoginOutput) error {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenStr, err := token.SignedString([]byte(os.Getenv("TOKEN_SECRET")))
 	if err != nil {
-		return nil
+		return err
 	}
 
 	// Update user token and tokenExp
@@ -90,5 +113,68 @@ func (s *Service) generateToken(email string, u *UserLoginOutput) error {
 	u.TokenExp = tokenExp
 
 	return nil
+}
 
+// AuthUserEmailID retrieves the user ID from the token
+func (s *Service) AuthUserEmailID(tokenString string) (string, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(os.Getenv("TOKEN_SECRET")), nil
+	})
+	if err != nil {
+		return "", err
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if ok && token.Valid {
+		email := claims["email"].(string)
+		expiresAt := claims["exp"].(string)
+		timeExp, _ := time.Parse("2006-01-02T15:04:05-07:00", expiresAt)
+		if err = s.validateUserTokenExpiration(tokenString, email, timeExp); err != nil {
+			return "", err
+		}
+		return email, nil
+	}
+	return "", nil
+
+}
+
+type authResponse struct {
+	IsAuth bool `json:"isAuth"`
+	Error  bool `json:"error"`
+}
+
+// AuthUser retrieves user from the context
+func (s *Service) AuthUser(ctx context.Context) (authResponse, error) {
+
+	var resp authResponse
+	uid, ok := ctx.Value(KeyAuthUserID).(string)
+	log.Println(uid, ok)
+	if !ok {
+		return resp, ErrUnauthenticated
+	}
+	_, err := s.findUserByEmail(uid)
+	if err != nil {
+		return resp, err
+	}
+	return authResponse{true, true}, nil
+}
+
+func (s *Service) validateUserTokenExpiration(token, email string, expiresAt time.Time) error {
+
+	now := time.Now()
+	if now.After(expiresAt) {
+		return ErrInvalidToken
+	}
+	collection := s.db.Collection("users")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	u := User{}
+	err := collection.FindOne(ctx, bson.M{"token": token, "email": email, "token_exp": expiresAt}).Decode(&u)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

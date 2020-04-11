@@ -2,10 +2,29 @@ package service
 
 import (
 	"context"
+	"errors"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
+)
+
+var (
+	// ErrUserNotFound used when the user wasn't found on the db.
+	ErrUserNotFound = errors.New("user not found")
+	// ErrInvalidEmail used when the email is invalid.
+	ErrInvalidEmail = errors.New("invalid email")
+	// ErrInvalidUsername used when the username is invalid.
+	ErrInvalidUsername = errors.New("invalid username")
+	// ErrEmailTaken used when there is already an user registered with that email
+	ErrEmailTaken = errors.New("email already exists")
+	// ErrUsernameTaken used when there is already an user registered with that username
+	ErrUsernameTaken = errors.New("username already exists")
+	// ErrForbiddenFollow used when you try to follow yourself
+	ErrForbiddenFollow = errors.New("cannot follow yourself")
+	// ErrUnsupportedAvatarFormat used when the avatar file extension is invalid
+	ErrUnsupportedAvatarFormat = errors.New("only png and jpeg allowed as avatar")
 )
 
 type User struct {
@@ -53,4 +72,18 @@ func (s *Service) Register(name, email, lastname, password string) error {
 
 func hash(password string) ([]byte, error) {
 	return bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+}
+
+func (s *Service) findUserByEmail(email string) (User, error) {
+
+	collection := s.db.Collection("users")
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	u := User{}
+	err := collection.FindOne(ctx, bson.M{"email": email}).Decode(&u)
+	if err != nil {
+
+		return u, err
+	}
+
+	return u, nil
 }
