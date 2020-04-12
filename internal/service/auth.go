@@ -10,6 +10,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -32,12 +33,14 @@ type key string
 
 // LoginOutput response
 type UserLoginOutput struct {
-	Name      string    `bson:"name" json:"name"`
-	Email     string    `bson:"email" json:"email"`
-	Lastname  string    `bson:"lastname" json:"lastname"`
-	AvatarURL *string   `bson:"avatar_url" json:"avatar_url"`
-	Token     string    `bson:"token" json:"token"`
-	TokenExp  time.Time `bson:"token_exp" json:"expires_at"`
+	ID           primitive.ObjectID `bson:"_id" json:"userId,omitempty"`
+	Name         string             `bson:"name" json:"name"`
+	Email        string             `bson:"email" json:"email"`
+	Lastname     string             `bson:"lastname" json:"lastname"`
+	AvatarURL    *string            `bson:"avatar_url" json:"avatar_url"`
+	Token        string             `bson:"token" json:"token"`
+	TokenExp     time.Time          `bson:"token_exp" json:"expires_at"`
+	LoginSuccess bool               `json:"loginSuccess"`
 }
 
 func (s *Service) Login(email, password string) (UserLoginOutput, error) {
@@ -56,10 +59,12 @@ func (s *Service) Login(email, password string) (UserLoginOutput, error) {
 	if err := verifyPassword(u.Password, password); err != nil {
 		return out, err
 	}
+	out.ID = u.ID
 	out.Name = u.Name
 	out.Email = u.Email
 	out.Lastname = u.Lastname
 	out.AvatarURL = u.AvatarURL
+	out.LoginSuccess = true
 
 	err = s.generateToken(u.Email, &out)
 
