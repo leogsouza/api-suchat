@@ -15,27 +15,32 @@ type loginInput struct {
 	Password string `json:"password" validate:"required|minLen:8"`
 }
 
+type loginErrorResponse struct {
+	LoginSuccess bool   `json:"loginSuccess"`
+	Message      string `json:"message"`
+}
+
 func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 	var in loginInput
 
 	defer r.Body.Close()
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		respond(w, loginErrorResponse{false, "Wrong JSON"}, http.StatusOK)
 		return
 	}
 
 	v := validate.Struct(in)
 
 	if !v.Validate() {
-		respond(w, v.Errors, http.StatusUnprocessableEntity)
+		respond(w, loginErrorResponse{false, "Unprocessable entity"}, http.StatusOK)
 		return
 	}
 
 	out, err := h.Login(in.Email, in.Password)
 
 	if err != nil {
-		errMessage := ErrorResponse{http.StatusBadRequest, err.Error()}
-		respond(w, errMessage, http.StatusBadRequest)
+
+		respond(w, loginErrorResponse{false, "BadRequest"}, http.StatusOK)
 		return
 	}
 
@@ -74,7 +79,7 @@ func (h *handler) withAuth(next http.Handler) http.Handler {
 		uid, err := h.Service.AuthUserEmailID(token)
 
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			respond(w, authResponse{}, http.StatusOK)
 			return
 		}
 
@@ -93,12 +98,12 @@ func (h *handler) authUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err == service.ErrUserNotFound {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		respond(w, authResponse{}, http.StatusOK)
 		return
 	}
 
 	if err != nil {
-		respondError(w, err)
+		respond(w, authResponse{}, http.StatusOK)
 		return
 	}
 

@@ -163,7 +163,7 @@ func (s *Service) AuthUser(ctx context.Context) (authResponse, error) {
 	if err != nil {
 		return resp, err
 	}
-	return authResponse{true, true}, nil
+	return authResponse{true, false}, nil
 }
 
 func (s *Service) validateUserTokenExpiration(token, email string, expiresAt time.Time) error {
