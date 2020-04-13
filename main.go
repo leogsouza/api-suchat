@@ -45,6 +45,8 @@ func main() {
 
 	h := handler.New(s)
 
+	handler.SocketHandler()
+
 	log.Printf("accepting connections on port %s", port)
 	if err = http.ListenAndServe(":"+port, h); err != nil {
 		log.Fatalf("could not start server: %v\n", err)

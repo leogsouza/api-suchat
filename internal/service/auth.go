@@ -146,6 +146,7 @@ func (s *Service) AuthUserEmailID(tokenString string) (string, error) {
 }
 
 type authResponse struct {
+	User
 	IsAuth bool `json:"isAuth"`
 	Error  bool `json:"error"`
 }
@@ -155,15 +156,18 @@ func (s *Service) AuthUser(ctx context.Context) (authResponse, error) {
 
 	var resp authResponse
 	uid, ok := ctx.Value(KeyAuthUserID).(string)
-	log.Println(uid, ok)
+	log.Println("uid ok", uid, ok)
 	if !ok {
 		return resp, ErrUnauthenticated
 	}
-	_, err := s.findUserByEmail(uid)
+	u, err := s.findUserByEmail(uid)
 	if err != nil {
 		return resp, err
 	}
-	return authResponse{true, false}, nil
+	resp.User = u
+	resp.IsAuth = true
+	resp.Error = false
+	return resp, nil
 }
 
 func (s *Service) validateUserTokenExpiration(token, email string, expiresAt time.Time) error {
