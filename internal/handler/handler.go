@@ -49,6 +49,8 @@ func New(s *service.Service) http.Handler {
 		r.Get("/logout", h.logout)
 	})
 
+	h.socketHandler()
+
 	return r
 }
 

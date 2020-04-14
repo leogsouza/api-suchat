@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/ambelovsky/go-structs v1.1.0 // indirect
 	github.com/ambelovsky/gosf v0.0.0-20190513201932-b27ff78c55c3
-	github.com/ambelovsky/gosf-socketio v0.0.0-20190513184750-bff8eb021ed1 // indirect
+	github.com/ambelovsky/gosf-socketio v0.0.0-20190513184750-bff8eb021ed1
 	github.com/bmatcuk/doublestar v1.2.2 // indirect
 	github.com/cortesi/modd v0.0.0-20191202231957-98a770274f90 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
