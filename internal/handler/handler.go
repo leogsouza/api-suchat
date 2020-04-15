@@ -40,13 +40,18 @@ func New(s *service.Service) http.Handler {
 	r.Use(cors.Handler)
 
 	r.Get("/", statusHandler)
-	r.Post("/login", h.login)
-	r.Post("/register", h.register)
+	r.Route("/api", func(r chi.Router) {
+		r.Route("/users", func(r chi.Router) {
+			r.Post("/login", h.login)
+			r.Post("/register", h.register)
 
-	r.Group(func(r chi.Router) {
-		r.Use(h.withAuth)
-		r.Get("/auth", h.authUser)
-		r.Get("/logout", h.logout)
+			r.Group(func(r chi.Router) {
+				r.Use(h.withAuth)
+				r.Get("/auth", h.authUser)
+				r.Get("/logout", h.logout)
+			})
+		})
+
 	})
 
 	h.socketHandler()
