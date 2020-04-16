@@ -40,6 +40,14 @@ type User struct {
 	UpdatedAt time.Time          `bson:"updated_at" json:"updated_at,omitempty"`
 }
 
+type UserChat struct {
+	ID        primitive.ObjectID `bson:"_id" json:"id"`
+	Name      string             `bson:"name" json:"name"`
+	Email     string             `bson:"email" json:"email"`
+	Lastname  string             `bson:"lastname" json:"lastname"`
+	AvatarURL *string            `bson:"avatar_url" json:"avatar_url"`
+}
+
 type userCreatedOutput struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
@@ -83,6 +91,24 @@ func (s *Service) findUserByEmail(email string) (User, error) {
 	if err != nil {
 
 		return u, err
+	}
+
+	return u, nil
+}
+
+func (s *Service) findUserChatById(id primitive.ObjectID) (UserChat, error) {
+	collection := s.db.Collection("users")
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	u := UserChat{}
+
+	err := collection.FindOne(ctx, bson.M{"_id": id}).Decode(&u)
+	if err != nil {
+		return u, err
+	}
+
+	if u.AvatarURL == nil {
+		avatarURL := "https://i.pravatar.cc/100?u=" + u.ID.Hex()
+		u.AvatarURL = &avatarURL
 	}
 
 	return u, nil

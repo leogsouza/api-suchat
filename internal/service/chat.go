@@ -17,6 +17,14 @@ type Chat struct {
 	CreatedAt time.Time          `bson:"created_at" json:"created_at,omitempty"`
 }
 
+type chatOutput struct {
+	ID        primitive.ObjectID `json:"id"`
+	Sender    UserChat           `json:"sender"`
+	Message   string             `json:"message"`
+	Type      string             `json:"type"`
+	CreatedAt time.Time          `json:"created_at,omitempty"`
+}
+
 func (s *Service) SaveChat(c Chat) (Chat, error) {
 	collection := s.db.Collection("chats")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -33,9 +41,9 @@ func (s *Service) SaveChat(c Chat) (Chat, error) {
 	return chat, nil
 }
 
-func (s *Service) GetChats() ([]Chat, error) {
+func (s *Service) GetChats() ([]chatOutput, error) {
 
-	var chats []Chat
+	var chats []chatOutput
 	collection := s.db.Collection("chats")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -52,7 +60,20 @@ func (s *Service) GetChats() ([]Chat, error) {
 			log.Fatal(err)
 		}
 
-		chats = append(chats, chat)
+		u, err := s.findUserChatById(chat.Sender)
+		if err != nil {
+			return chats, err
+		}
+
+		chout := chatOutput{
+			chat.ID,
+			u,
+			chat.Message,
+			chat.Type,
+			chat.CreatedAt,
+		}
+
+		chats = append(chats, chout)
 	}
 
 	if err := cur.Err(); err != nil {
