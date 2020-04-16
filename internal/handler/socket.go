@@ -53,7 +53,7 @@ func (h *handler) socketHandler() {
 			return err.Error()
 		}
 		//send event to all in room
-		c.Emit("output_message", out)
+		server.BroadcastToAll("output_message", out)
 		return "OK"
 	})
 
