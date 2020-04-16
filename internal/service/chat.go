@@ -25,20 +25,38 @@ type chatOutput struct {
 	CreatedAt time.Time          `json:"created_at,omitempty"`
 }
 
-func (s *Service) SaveChat(c Chat) (Chat, error) {
+func (s *Service) SaveChat(c Chat) (chatOutput, error) {
+
+	var chout chatOutput
+
 	collection := s.db.Collection("chats")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	result, err := collection.InsertOne(ctx, c)
 	var chat Chat
 	if err != nil {
-		return chat, err
+		return chout, err
 	}
+
 	err = collection.FindOne(ctx, bson.M{"_id": result.InsertedID}).Decode(&chat)
 	if err != nil {
-		return chat, err
+		return chout, err
 	}
-	return chat, nil
+
+	u, err := s.findUserChatById(chat.Sender)
+	if err != nil {
+		return chout, err
+	}
+
+	chout = chatOutput{
+		chat.ID,
+		u,
+		chat.Message,
+		chat.Type,
+		chat.CreatedAt,
+	}
+
+	return chout, nil
 }
 
 func (s *Service) GetChats() ([]chatOutput, error) {

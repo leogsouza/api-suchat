@@ -94,7 +94,7 @@ func verifyPassword(hashedPassword, password string) error {
 }
 
 func (s *Service) generateToken(email string, u *UserLoginOutput) error {
-	tokenExp := time.Now().Add(time.Hour * 1)
+	tokenExp := time.Now().Add(TokenLifeSpan)
 	claims := jwt.MapClaims{}
 	claims["authorized"] = true
 	claims["email"] = email
