@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 
@@ -70,14 +71,17 @@ type authResponse struct {
 func (h *handler) withAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		a := r.Header.Get("Authorization")
+		log.Printf("authorization %v", a)
 		if !strings.HasPrefix(a, "Bearer ") {
 			next.ServeHTTP(w, r)
 			return
 		}
 
 		token := a[7:]
+		log.Printf("token", token)
 		uid, err := h.Service.AuthUserEmailID(token)
 
+		log.Printf("uid", uid)
 		if err != nil {
 			respond(w, authResponse{}, http.StatusOK)
 			return

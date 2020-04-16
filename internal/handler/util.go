@@ -24,6 +24,11 @@ func respondError(w http.ResponseWriter, err error) {
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
+func respondHTTPError(w http.ResponseWriter, err error, statusCode int) {
+	response := &ErrorResponse{statusCode, err.Error()}
+	respond(w, response, statusCode)
+}
+
 type ErrorResponse struct {
 	Code    int    `json:"code,omitempty"`
 	Message string `json:"message"`

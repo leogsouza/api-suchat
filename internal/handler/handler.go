@@ -52,6 +52,8 @@ func New(s *service.Service) http.Handler {
 			})
 		})
 
+		r.Get("/chats", h.getChats)
+
 	})
 
 	h.socketHandler()
