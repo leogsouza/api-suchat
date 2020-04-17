@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 )
 
 func respond(w http.ResponseWriter, v interface{}, statusCode int) {
@@ -32,4 +34,19 @@ func respondHTTPError(w http.ResponseWriter, err error, statusCode int) {
 type ErrorResponse struct {
 	Code    int    `json:"code,omitempty"`
 	Message string `json:"message"`
+}
+
+func uniqueToken(len int) string {
+	b := make([]byte, len)
+	rand.Read(b)
+	return fmt.Sprintf("%x", b)
+}
+
+func createUploadFolder(dir string) {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			panic(err)
+		}
+	}
 }
