@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"time"
 
 	gosocketio "github.com/ambelovsky/gosf-socketio"
 	"github.com/ambelovsky/gosf-socketio/transport"
+	"github.com/leogsouza/api-suchat/internal/helper"
 	"github.com/leogsouza/api-suchat/internal/service"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -61,6 +63,7 @@ func (h *handler) socketHandler() {
 		//setup http server
 		serveMux := http.NewServeMux()
 		serveMux.Handle("/socket.io/", server)
-		log.Panic(http.ListenAndServe(":9999", serveMux))
+		socketPort := fmt.Sprintf(":%s", helper.Env("SOCKET_PORT", "9999"))
+		log.Panic(http.ListenAndServe(socketPort, serveMux))
 	}()
 }

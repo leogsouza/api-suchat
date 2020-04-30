@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/joho/godotenv"
 	"github.com/leogsouza/api-suchat/internal/handler"
+	"github.com/leogsouza/api-suchat/internal/helper"
 	"github.com/leogsouza/api-suchat/internal/service"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -22,9 +23,11 @@ func init() {
 
 func main() {
 
-	port := env("PORT", "8080")
+	port := helper.Env("PORT", "8080")
+	dbHost := helper.Env("DB_HOST", "mongodb://localhost")
+	dbPort := helper.Env("DB_PORT", "27017")
 
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+	clientOptions := options.Client().ApplyURI(fmt.Sprintf("%s:%s", dbHost, dbPort))
 
 	// Connect to MongoDB
 	client, err := mongo.Connect(context.TODO(), clientOptions)
@@ -49,13 +52,4 @@ func main() {
 	if err = http.ListenAndServe(":"+port, h); err != nil {
 		log.Fatalf("could not start server: %v\n", err)
 	}
-}
-
-func env(key, fallbackValue string) string {
-	s := os.Getenv(key)
-	if s == "" {
-		return fallbackValue
-	}
-
-	return s
 }
